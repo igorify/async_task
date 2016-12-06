@@ -19,18 +19,18 @@ let listObj = {};
 
 
 function wrapRequest(resourseName, cb){
-    request(resourseName, (error, response) => {
-        console.log(response.statusCode);
+    request(resourseName, /*{timeout: 3000},*/ (error, response) => {
 
-        if(error) return res.status(500).send('Error');
+        if(error) console.error(error.stack);
 
-        /*if( setTimeout( response.statusCode == undefined, 3000)) {
-         listObj[resourseName] = statuses.DOWN
-         } else */if (response.statusCode <=302) {
+        if (setTimeout(()=> !response, 3000)){
+            listObj[resourseName] = statuses.DOWN;
+        } else if (response.statusCode <=302) {
             listObj[resourseName] = statuses.UP;
         } else {
             listObj[resourseName] = statuses.DOWN;
         }
+
         cb();
     });
 }
@@ -46,11 +46,11 @@ app.get('/health_check',  (req, res) => {
         }
 
         function spotify() {
-            wrapRequest(resources.spotify, mergedJson);
+            wrapRequest(resources.spotify, yandex);
         }
 
-      /*  function yandex() {
+        function yandex() {
             wrapRequest(resources.yandex, mergedJson)
-        }*/
+        }
 });
 
