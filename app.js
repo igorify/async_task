@@ -1,35 +1,39 @@
 const express = require('express');
 const app = express();
 const request = require('request');
-const timeout = require('connect-timeout');
 
-app.listen(3000);
+app.listen(3000, ()=> console.log('App start listening on post 3000'));
 
-app.get('/health_check', timeout('5s'), (req, res) => {
+//console.log('NODE_ENV:', process.env.NODE_ENV);
 
-    const UP = 'UP',
-          DOWN = 'DOWN';
+const statuses = {
+    UP: 'UP',
+    DOWN: 'DOWN'
+};
 
-    let resourses = {
-        google: 'google.com',
-        youtube: 'youtube.com/dsfkdds',
-        yandex: 'ya.goat'
+app.get('/health_check',  (req, res) => {
+
+    let resources = {
+        google: 'https://www.google.com.ua',
+        youtube: 'https://www.youtube.com/dsfkdds',
+        yandex: 'https://www.yanddddex.com/'
     };
 
     let listObj = {};
 
 
     function wrapRequest(resourseName, cb){
-        request(`https://${resourseName}`, (error, response) => {
+        request(resourseName, (error, response) => {
             //console.log(response.statusCode);
-            if (error) return res.status(500).send('Error');
 
-            if (response.statusCode == 200) {
-                listObj[resourseName] = UP;
-            } else if (response.statusCode == 404){
-                listObj[resourseName] = UP;
-            } else if (response.timedout){
-                listObj[resourseName] = DOWN;
+            if(error) return res.status(500).send('Error');
+
+            /*if( setTimeout( response.statusCode == undefined, 3000)) {
+                listObj[resourseName] = statuses.DOWN
+            } else */if (response.statusCode <=302) {
+                listObj[resourseName] = statuses.UP;
+            } else {
+                listObj[resourseName] = statuses.DOWN;
             }
             cb();
         });
@@ -37,18 +41,18 @@ app.get('/health_check', timeout('5s'), (req, res) => {
 
         google();
 
+        mergedJson = () => {res.send(JSON.stringify(listObj))};
+
         function google() {
-            wrapRequest(resourses.google, youtube);
+            wrapRequest(resources.google, youtube);
         }
 
         function youtube() {
-            wrapRequest(resourses.youtube, yandex);
+            wrapRequest(resources.youtube, mergedJson);
         }
 
-        function yandex() {
-            wrapRequest(resourses.yandex, ()=> {res.send(JSON.stringify(listObj))})
-        }
-
-
+      /*  function yandex() {
+            wrapRequest(resources.yandex, mergedJson)
+        }*/
 });
 
