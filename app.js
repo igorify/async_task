@@ -27,9 +27,7 @@ function wrapRequest(resourseName, cb){
 
         if(error) console.error(error.stack);
 
-       /* if (setTimeout(()=> !response, 3000)){
-            listObj[resourseName] = statuses.DOWN;
-        } else */if (response.statusCode <=302) {
+        if (response.statusCode <=302) {
             listObj[resourseName] = statuses.UP;
         } else {
             listObj[resourseName] = statuses.DOWN;
