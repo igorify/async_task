@@ -15,14 +15,15 @@ const statuses = {
 
 let resources = config.get('Resources');
 
-let listObj = {};
-console.log(listObj);
 
-function wrapRequest(resourseName){
-    request(resourseName, /*{timeout: 3000},*/ (error, response) => {
+function wrapRequest(resourseName, listObj, cb){
+    //t.aboad() cancelRequet Method
+    let r =request(resourseName, /*{timeout: 3000},*/ (error, response) => {
 
         if(error) console.error(error.stack);
-
+  /*      if(setTimeout(()=> {
+            }, 3000);
+*/
         if (setTimeout(()=> !response, 3000)){
             listObj[resourseName] = statuses.DOWN;
         } else if (response.statusCode <=302) {
@@ -30,18 +31,19 @@ function wrapRequest(resourseName){
         } else {
             listObj[resourseName] = statuses.DOWN;
         }
+        cb();
     });
 }
 
 app.get('/health_check',  (req, res) => {
 
+    let listObj = {};
     let operations = 0;
     let resourcesLength = Object.keys(resources).length;
 
     Object.keys(resources).forEach((resource)=> {
-        wrapRequest(resources[resource]);
+        wrapRequest(resources[resource], listObj, (operations) => operations++);
 
-        operations++;
         if (operations == resourcesLength) return res.send(JSON.stringify(listObj))
 
     });
