@@ -14,27 +14,28 @@ const statuses = {
 };
 
 let resources = config.get('Resources');
-let listObj = {};
 
-function wrapRequest(resourseName, cb){
+let listObj = {};
+function wrapRequest(resourseName, cb, listObj){
 
     let timeout = setTimeout(()=>{
-        //r.abourt();
+        r.abort();
         listObj[resourseName] = statuses.DOWN;
-    }, 3000);
+    }, 5000);
 
-    let r = request(resourseName, (error, response) => {
-
+    let r = request.get(resourseName, (error, response) => {
         if(error) console.error(error.stack);
 
-        if (response.statusCode <=302) {
-            listObj[resourseName] = statuses.UP;
-        } else {
-            listObj[resourseName] = statuses.DOWN;
-        } console.log(listObj);
-
-        clearTimeout(timeout);
+        if(response){
+            clearTimeout(timeout);
+            if (response.statusCode <=302) {
+                listObj[resourseName] = statuses.UP;
+            } else {
+                listObj[resourseName] = statuses.DOWN;
+            }
+        }
     });
+
     cb();
 }
 
@@ -43,11 +44,14 @@ app.get('/health_check',  (req, res) => {
     let operations = 0;
     let resourcesLength = Object.keys(resources).length;
 
-    Object.keys(resources).forEach((resource)=> {
-        wrapRequest(resources[resource], ()=> operations++);
-        if (operations == resourcesLength) return res.send(JSON.stringify(listObj))
 
+    Object.keys(resources).forEach((resource)=> {
+        wrapRequest(resources[resource], ()=> {operations++}, listObj);
+        console.log(listObj);
+        if (operations == resourcesLength) return res.send(JSON.stringify(listObj));
     });
+
+
 
 });
 
