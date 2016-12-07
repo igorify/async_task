@@ -15,9 +15,8 @@ const statuses = {
 
 let resources = config.get('Resources');
 
-let operations = 0;
-let resourcesLength = Object.keys(resources).length+1;
 let listObj = {};
+console.log(listObj);
 
 function wrapRequest(resourseName){
     request(resourseName, /*{timeout: 3000},*/ (error, response) => {
@@ -34,18 +33,18 @@ function wrapRequest(resourseName){
     });
 }
 
-
 app.get('/health_check',  (req, res) => {
 
-    mergedJson = () => {res.send(JSON.stringify(listObj))};
+    let operations = 0;
+    let resourcesLength = Object.keys(resources).length;
 
     Object.keys(resources).forEach((resource)=> {
-        operations++;
-        if (operations == resourcesLength) return mergedJson();
-
         wrapRequest(resources[resource]);
-    });
 
+        operations++;
+        if (operations == resourcesLength) return res.send(JSON.stringify(listObj))
+
+    });
 
 });
 
