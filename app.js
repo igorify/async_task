@@ -3,6 +3,7 @@ const app = express();
 const request = require('request');
 const config = require('config');
 
+
 app.listen(3000, ()=> console.log('App start listening on post 3000'));
 
 console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -14,11 +15,11 @@ const statuses = {
 
 let resources = config.get('Resources');
 
-
+let operations = 0;
+let resourcesLength = Object.keys(resources).length+1;
 let listObj = {};
 
-
-function wrapRequest(resourseName, cb){
+function wrapRequest(resourseName){
     request(resourseName, /*{timeout: 3000},*/ (error, response) => {
 
         if(error) console.error(error.stack);
@@ -30,27 +31,21 @@ function wrapRequest(resourseName, cb){
         } else {
             listObj[resourseName] = statuses.DOWN;
         }
-
-        cb();
     });
 }
 
+
 app.get('/health_check',  (req, res) => {
 
-        uber();
+    mergedJson = () => {res.send(JSON.stringify(listObj))};
 
-        mergedJson = () => {res.send(JSON.stringify(listObj))};
+    Object.keys(resources).forEach((resource)=> {
+        operations++;
+        if (operations == resourcesLength) return mergedJson();
 
-        function uber() {
-            wrapRequest(resources.uber, spotify);
-        }
+        wrapRequest(resources[resource]);
+    });
 
-        function spotify() {
-            wrapRequest(resources.spotify, yandex);
-        }
 
-        function yandex() {
-            wrapRequest(resources.yandex, mergedJson)
-        }
 });
 
