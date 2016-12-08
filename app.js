@@ -19,18 +19,17 @@ function upDownCheck(resourseName, cb){
 
     let timeout = setTimeout(()=>{
         r.abort();
-        cb(statuses.DOWN);
+        cb(null, statuses.DOWN);
     }, 5000);
 
     let r = request.get(resourseName, (error, response) => {
-        if(error) console.error(error.stack);
 
         if(response){
             clearTimeout(timeout);
             if (response.statusCode <=302) {
-                cb(statuses.UP);
+                cb(error, statuses.UP);
             } else {
-                cb(statuses.DOWN);
+                cb(error, statuses.DOWN);
             }
 
         }
@@ -45,7 +44,9 @@ app.get('/health_check',  (req, res) => {
     Object.keys(resources).forEach((resource)=> {
         let resourceValue = resources[resource];
 
-        upDownCheck(resourceValue,  function(status) {
+        upDownCheck(resourceValue,  function(error , status) {
+            if(error) console.error(error.stack);
+
             mergedStatuses[resourceValue] = status;
             operations++;
 
