@@ -1,12 +1,12 @@
+process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 const express = require('express');
 const app = express();
 const request = require('request');
 const config = require('config');
 
-
 app.listen(3000, ()=> console.log('App start listening on post 3000'));
-
-console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const statuses = {
     UP: 'UP',
@@ -15,15 +15,12 @@ const statuses = {
 
 let resources = config.get('Resources');
 
-
-
-function wrapRequest(resourseName, resultObj, cb){
+function upDownCheck(resourseName, cb){
 
     let timeout = setTimeout(()=>{
         r.abort();
-        resultObj[resourseName] = statuses.DOWN;
-        cb();
-    }, 3000);
+        cb(statuses.DOWN);
+    }, 2000);
 
     let r = request.get(resourseName, (error, response) => {
         if(error) console.error(error.stack);
@@ -31,30 +28,29 @@ function wrapRequest(resourseName, resultObj, cb){
         if(response){
             clearTimeout(timeout);
             if (response.statusCode <=302) {
-                resultObj[resourseName] = statuses.UP;
+                cb(statuses.UP);
             } else {
-                resultObj[resourseName] = statuses.DOWN;
+                cb(statuses.DOWN);
             }
-            cb();
+
         }
-
     });
-
 }
 
 app.get('/health_check',  (req, res) => {
-    let listObj = {};
 
+    let mergedStatuses = {};
     let operations = 0;
 
     Object.keys(resources).forEach((resource)=> {
-        wrapRequest(resources[resource], listObj,  function() {
+        let resourceValue = resources[resource];
+
+        upDownCheck(resourceValue,  function(status) {
+            mergedStatuses[resourceValue] = status;
             operations++;
-            console.log(operations);
 
             if (Object.keys(resources).length == operations){
-                console.log(listObj);
-                return res.send(JSON.stringify(listObj))
+                return res.send(JSON.stringify(mergedStatuses));
             }
         });
 
