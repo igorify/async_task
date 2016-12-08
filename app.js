@@ -15,17 +15,18 @@ const statuses = {
 
 let resources = config.get('Resources');
 
-let listObj = {};
+
 
 function wrapRequest(resourseName, resultObj, cb){
 
     let timeout = setTimeout(()=>{
         r.abort();
         resultObj[resourseName] = statuses.DOWN;
+        cb();
     }, 3000);
 
     let r = request.get(resourseName, (error, response) => {
-        //if(error) console.error(error.stack);
+        if(error) console.error(error.stack);
 
         if(response){
             clearTimeout(timeout);
@@ -34,25 +35,29 @@ function wrapRequest(resourseName, resultObj, cb){
             } else {
                 resultObj[resourseName] = statuses.DOWN;
             }
+            cb();
         }
+
     });
-    cb();
+
 }
 
 app.get('/health_check',  (req, res) => {
+    let listObj = {};
 
     let operations = 0;
-    let resourcesLength = Object.keys(resources).length;
 
     Object.keys(resources).forEach((resource)=> {
-        wrapRequest(resources[resource], listObj,  function() {});
+        wrapRequest(resources[resource], listObj,  function() {
+            operations++;
+            console.log(operations);
 
-        operations++;
-        //response отсылаеться раньше, чем вернулись отработали асинхронные функции. Нужно чтобы  operations++ срабатывал после кажндой отработки wrapRequest
-        if (resourcesLength == operations){
-            console.log(listObj, operations );
-            return res.send(JSON.stringify(listObj))
-        }
+            if (Object.keys(resources).length == operations){
+                console.log(listObj);
+                return res.send(JSON.stringify(listObj))
+            }
+        });
+
     });
 });
 
