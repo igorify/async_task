@@ -20,7 +20,7 @@ function upDownCheck(resourseName, cb){
     let timeout = setTimeout(()=>{
         r.abort();
         cb(statuses.DOWN);
-    }, 2000);
+    }, 5000);
 
     let r = request.get(resourseName, (error, response) => {
         if(error) console.error(error.stack);
