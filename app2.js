@@ -13,17 +13,17 @@ const statuses = {
     DOWN: 'DOWN'
 };
 
-let resources = config.get('Resources');
+let resourcesData = config.get('Resources');
 
-function upDownCheck(resourceValue, cb){
+function upDownCheck(resources, resourceIndex,  cb){
 
     let timeout = setTimeout(()=>{
         r.abort();
         cb(null, statuses.DOWN);
     }, 5000);
 
-    let r = request.get(resourceValue, (error, response) => {
-        setTimeout((error)=> {if(error) return cb(error)}, 5000 );
+    let r = request.get(resource = resources[resourceIndex], (error, response) => {
+        //setTimeout((error)=> {if(error) return cb(error)}, 5000 );
         if(response){
              clearTimeout(timeout);
             if (response.statusCode <=302) {
@@ -31,7 +31,6 @@ function upDownCheck(resourceValue, cb){
             } else {
                 cb(error, statuses.DOWN);
             }
-
         }
     });
 }
@@ -39,22 +38,21 @@ function upDownCheck(resourceValue, cb){
 app.get('/health_check',  (req, res, next) => {
 
     let mergedStatuses = {};
-    let operations = 0;
 
-    Object.keys(resources).forEach((resource)=> {
-        let resourceValue = resources[resource];
+    let resources = Object.keys(resourcesData).map(key => resourcesData[key]);
+    let resourceIndex = resources.length - 1;
 
-        upDownCheck(resourceValue,  function(error , status) {
-            if(error) return next(error);
+     upDownCheck (resources, resourceIndex, function cb(error , status) {
+        if(error) return next(error);
+        let resource = resources[resourceIndex];
 
-            mergedStatuses[resourceValue] = status;
-            operations++;
+        mergedStatuses[resource] = status;
+        console.log(mergedStatuses);
 
-            if (Object.keys(resources).length == operations){
-                return res.send(JSON.stringify(mergedStatuses));
-            }
-        });
+        if (resourceIndex > 0)  return upDownCheck(resources, resourceIndex = resourceIndex - 1, cb);
 
-    });
+        return res.send(JSON.stringify(mergedStatuses));
+
+     });
 });
 
